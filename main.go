@@ -1,52 +1,35 @@
 package main
 
 import (
-	"net/http"
-
-	"github.com/gin-gonic/gin"
+	"todolists/app"
+	"todolists/handler"
+	"todolists/models"
 )
 
-var db = make(map[string]string)
+var engine app.Engine
 
-func setupRouter() *gin.Engine {
-	r := gin.Default()
-	r.GET("/ping", func(ctx *gin.Context) {
-		ctx.String(http.StatusOK, "pong")
-	})
-
-	r.GET("/user/:name", func(c *gin.Context) {
-		user := c.Params.ByName("name")
-		value, ok := db[user]
-		if ok {
-			c.JSON(http.StatusOK, gin.H{"user": user, "value": value})
-		} else {
-			c.JSON(http.StatusOK, gin.H{"user": user, "status": "no value"})
-		}
-	})
-
-	authorized := r.Group("/", gin.BasicAuth(gin.Accounts{
-		"foo":  "bar", // user:foo password:bar
-		"manu": "123", // user:manu password:123
-	}))
-
-	authorized.POST("admin", func(c *gin.Context) {
-		user := c.MustGet(gin.AuthUserKey).(string)
-
-		// Parse JSON
-		var json struct {
-			Value string `json:"value" binding:"required"`
-		}
-
-		if c.Bind(&json) == nil {
-			db[user] = json.Value
-			c.JSON(http.StatusOK, gin.H{"status": "ok"})
-		}
-	})
-	return r
+func initRoute() {
+	engine.HandleFunc("/activity-groups", handler.Test)
+	engine.HandleFunc("/activity-groups/:id", handler.Test)
+	engine.HandleFunc("/todo-items", handler.Test)
+	engine.HandleFunc("/todo-items/:id", handler.Test)
 
 }
 
+func init() {
+	db := models.DBContext{
+		Host:     "18.140.60.34",
+		Port:     "5432",
+		User:     "mita",
+		Password: "mita2022",
+		DBName:   "waste",
+	}
+	engine = app.NewEngine(db)
+	initRoute()
+}
+
 func main() {
-	r := setupRouter()
-	r.RunTLS(":3000", "./ssl/server.pem", "./ssl/server.key")
+	//database setting
+	engine.AddConfig("images_path", "/")
+	engine.Run("3030")
 }
