@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"fmt"
+	"todolists/utility"
 
 	_ "github.com/lib/pq"
 )
@@ -22,4 +23,41 @@ func (db *DBContext) Connect() (*sql.DB, error) {
 		return nil, err
 	}
 	return conn, nil
+}
+
+type Row struct {
+	Create sql.NullString
+	Update sql.NullString
+	Delete sql.NullString
+}
+
+func (r *Row) Parse(data utility.Payload) {
+	if val, ok := data["created_at"]; ok {
+		r.Create.Scan(val)
+	}
+
+	if val, ok := data["updated_at"]; ok {
+		r.Update.Scan(val)
+	}
+
+	if val, ok := data["deleted_at"]; ok {
+		r.Delete.Scan(val)
+	}
+}
+
+func (r *Row) Map() (result utility.Payload) {
+	result = make(utility.Payload)
+	if r.Create.Valid {
+		result["created_at"] = r.Create.String
+	}
+
+	if r.Update.Valid {
+		result["updated_at"] = r.Update.String
+	}
+
+	if r.Delete.Valid {
+		result["deleted_at"] = r.Delete.String
+	}
+
+	return result
 }

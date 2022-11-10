@@ -4,20 +4,24 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"os"
 	"todolists/models"
 	"todolists/utility"
+
+	"github.com/gorilla/mux"
 )
 
 type Engine struct {
-	route  *http.ServeMux
+	route  *mux.Router
 	db     *sql.DB
 	config map[string]string
 }
 
 func NewEngine(db models.DBContext) Engine {
 	conn, _ := db.Connect()
+	utility.Migration(os.Getenv("QUERY"), conn)
 	return Engine{
-		route:  http.NewServeMux(),
+		route:  mux.NewRouter(),
 		db:     conn,
 		config: map[string]string{},
 	}
@@ -35,7 +39,7 @@ func (a *Engine) AddConfig(key string, value string) {
 	a.config[key] = value
 }
 
-func (a *Engine) HandleFunc(path string, handler func(context utility.ReqRes)) {
+func (a *Engine) HandleFunc(path string, handler func(c utility.ReqRes)) {
 	a.route.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		handler(utility.ReqRes{
 			Res:    w,

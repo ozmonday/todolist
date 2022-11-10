@@ -1,0 +1,15 @@
+DROP TABLE IF EXISTS activities;
+DROP TABLE IF EXISTS todos;
+
+CREATE TABLE IF NOT EXISTS activities (
+  id int NOT NULL PRIMARY KEY AUTO_INCREMENT,
+  email varchar(255) NOT NULL,
+  title varchar(255) NOT NULL,
+  created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted_at datetime DEFAULT NULL
+);
+
+CREATE TABLE IF NOT EXISTS todos (
+
+);
