@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"log"
 	"os"
 	"runtime"
 	"todolists/app"
@@ -11,26 +13,34 @@ import (
 var engine app.Engine
 
 func initRoute() {
+	engine.HandleFunc("/", handler.Test)
 	engine.HandleFunc("/activity-groups", handler.ActivityGroup)
 	engine.HandleFunc("/activity-groups/{id}", handler.ActivityGroup)
 	engine.HandleFunc("/todo-items", handler.Test)
 	engine.HandleFunc("/todo-items/{id}", handler.Test)
 }
+func main() {
+	runtime.GOMAXPROCS(3)
 
-func init() {
+	// db := models.DBContext{
+	// 	Host:     os.Getenv("MYSQL_HOST"),
+	// 	Port:     os.Getenv("MYSQL_PORT"),
+	// 	User:     os.Getenv("MYSQL_USER"),
+	// 	Password: os.Getenv("MYSQL_PASSWORD"),
+	// 	DBName:   os.Getenv("MYSQL_DBNAME"),
+	// }
+
 	db := models.DBContext{
-		Host:     os.Getenv("MYSQL_HOST"),
-		Port:     os.Getenv("MYSQL_PORT"),
-		User:     os.Getenv("MYSQL_USER"),
-		Password: os.Getenv("MYSQL_PASSWORD"),
-		DBName:   os.Getenv("MYSQL_DBNAME"),
+		Host:     "localhost",
+		Port:     "3306",
+		User:     "root",
+		Password: "cakradara",
+		DBName:   "todolist",
 	}
 	engine = app.NewEngine(db)
 	initRoute()
-}
-
-func main() {
-
-	runtime.GOMAXPROCS(3)
-	engine.Run(os.Getenv("PORT"))
+	fmt.Println("Server runing on port:", os.Getenv("PORT"))
+	if err := engine.Run(os.Getenv("PORT")); err != nil {
+		log.Println(err)
+	}
 }

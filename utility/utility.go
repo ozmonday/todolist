@@ -4,9 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"net/http"
-	"os"
 )
 
 type Payload map[string]interface{}
@@ -31,38 +29,23 @@ func (c *ReqRes) ParseJSON(payload *Payload) error {
 	return nil
 }
 
-func (c *ReqRes) WriteResponseJSON(statusCode int, message interface{}) error {
+func (c *ReqRes) WriteResponseJSON(statusCode int, message string, data interface{}) error {
+	var res map[string]interface{} = make(map[string]interface{})
+	res["data"] = data
+	res["message"] = message
+	res["status"] = statusCode
 
-	data, err := json.Marshal(message)
+	d, err := json.Marshal(res)
 	if err != nil {
 		return err
 	}
+	c.Res.Header().Add("Content-Type", "application/json")
 	c.Res.WriteHeader(statusCode)
-	c.Res.Write(data)
+	c.Res.Write(d)
 	return nil
 }
 
 func (c *ReqRes) WriteResponse(statusCode int, message string) {
 	c.Res.WriteHeader(statusCode)
 	c.Res.Write([]byte(message))
-}
-
-func Migration(filename string, db *sql.DB) error {
-	file, err := os.Open(filename)
-	if err != nil {
-		return err
-	}
-
-	query, err := ioutil.ReadAll(file)
-	if err != nil {
-		return err
-	}
-
-	_, err = db.Exec(string(query))
-	if err != nil {
-		return err
-	}
-
-	defer file.Close()
-	return nil
 }

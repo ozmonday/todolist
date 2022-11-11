@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"todolists/utility"
 
-	_ "github.com/lib/pq"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type DBContext struct {
@@ -17,11 +17,17 @@ type DBContext struct {
 }
 
 func (db *DBContext) Connect() (*sql.DB, error) {
-	data := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", db.Host, db.Port, db.User, db.Password, db.DBName)
-	conn, err := sql.Open("postgres", data)
+	data := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", db.User, db.Password, db.Host, db.Port, db.DBName)
+	conn, err := sql.Open("mysql", data)
 	if err != nil {
 		return nil, err
 	}
+
+	err = conn.Ping()
+	if err != nil {
+		return nil, err
+	}
+
 	return conn, nil
 }
 
@@ -49,14 +55,20 @@ func (r *Row) Map() (result utility.Payload) {
 	result = make(utility.Payload)
 	if r.Create.Valid {
 		result["created_at"] = r.Create.String
+	} else {
+		result["created_at"] = nil
 	}
 
 	if r.Update.Valid {
 		result["updated_at"] = r.Update.String
+	} else {
+		result["updated_at"] = nil
 	}
 
 	if r.Delete.Valid {
 		result["deleted_at"] = r.Delete.String
+	} else {
+		result["deleted_at"] = nil
 	}
 
 	return result

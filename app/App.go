@@ -3,36 +3,45 @@ package app
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
-	"os"
 	"todolists/models"
 	"todolists/utility"
 
-	"github.com/gorilla/mux"
+	"github.com/NYTimes/gziphandler"
 )
 
 type Engine struct {
-	route  *mux.Router
+	route  *http.ServeMux
 	db     *sql.DB
 	config map[string]string
 }
 
 func NewEngine(db models.DBContext) Engine {
-	conn, _ := db.Connect()
-	utility.Migration(os.Getenv("QUERY"), conn)
+	log.Println("Connect to database...")
+	conn, err := db.Connect()
+	if err != nil {
+		log.Println(err.Error())
+	}
+
 	return Engine{
-		route:  mux.NewRouter(),
+		route:  new(http.ServeMux),
 		db:     conn,
 		config: map[string]string{},
 	}
 }
 
-func (a Engine) Run(port string) {
+func (a *Engine) Run(port string) error {
+
+	defer a.db.Close()
 	server := http.Server{
-		Handler: a.route,
+		Handler: gziphandler.GzipHandler(a.route),
 		Addr:    fmt.Sprintf(":%s", port),
 	}
-	server.ListenAndServe()
+	if err := server.ListenAndServe(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (a *Engine) AddConfig(key string, value string) {
@@ -49,12 +58,4 @@ func (a *Engine) HandleFunc(path string, handler func(c utility.ReqRes)) {
 		})
 
 	})
-}
-
-// default
-
-var defaultApp Engine
-
-func init() {
-
 }
