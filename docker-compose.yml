@@ -7,17 +7,28 @@ services:
     ports:
       - "3306:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=$MYSQL_PASSWORD
-      - MYSQL_DATABASE=$MYSQL_DATABASE
+      - MYSQL_ROOT_PASSWORD=cakradara
+      - MYSQL_DATABASE=dbtodolist
+    
+    networks:
+      - my_bridge
 
   todolist:
+    depends_on:
+      - mysqldb
     container_name: todolists
-    image: todolists:latest
+    image: tdls:latest
     ports:
       - "3030:3030"
     environment:
       - MYSQL_HOST=mysqldb
       - MYSQL_PORT=3306
       - MYSQL_USER=root
-      - MYSQL_PASSWORD=$MYSQL_PASSWORD
-      - MYSQL_DBNAME=$MYSQL_DATABASE
+      - MYSQL_PASSWORD=cakradara
+      - MYSQL_DBNAME=dbtodolist
+    networks:
+      - my_bridge
+
+networks:
+  my_bridge:
+    name: my_bridge 

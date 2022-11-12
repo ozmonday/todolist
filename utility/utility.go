@@ -4,7 +4,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os"
 )
 
 type Payload map[string]interface{}
@@ -48,4 +51,26 @@ func (c *ReqRes) WriteResponseJSON(statusCode int, message string, data interfac
 func (c *ReqRes) WriteResponse(statusCode int, message string) {
 	c.Res.WriteHeader(statusCode)
 	c.Res.Write([]byte(message))
+}
+
+func Migration(filename string, db *sql.DB) error {
+	file, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+
+	query, err := ioutil.ReadAll(file)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(query))
+	_, err = db.Exec(string(query))
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Minration Success")
+	defer file.Close()
+	return nil
 }
