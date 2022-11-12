@@ -44,7 +44,7 @@ func (a *Activity) Insert(db *sql.DB, context context.Context) error {
 	if err != nil {
 		return err
 	}
-	result := `SELECT @id as "id", @created_at as "created_at", @updated_at as "updated_at";`
+	result := `SELECT @id_activity as "id", @created_at_activity as "created_at", @updated_at_activity as "updated_at";`
 	row := db.QueryRowContext(context, result)
 	row.Scan(&a.ID, &a.Log.Create, &a.Log.Update)
 	return nil

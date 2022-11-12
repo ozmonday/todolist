@@ -19,6 +19,7 @@ func migration(filename string, db *sql.DB) error {
 		return err
 	}
 
+	fmt.Println(string(query))
 	_, err = db.Exec(string(query))
 	if err != nil {
 		return err
@@ -30,17 +31,28 @@ func migration(filename string, db *sql.DB) error {
 }
 
 func main() {
+	// db := models.DBContext{
+	// 	Host:     os.Getenv("MYSQL_HOST"),
+	// 	Port:     os.Getenv("MYSQL_PORT"),
+	// 	User:     os.Getenv("MYSQL_USER"),
+	// 	Password: os.Getenv("MYSQL_PASSWORD"),
+	// 	DBName:   os.Getenv("MYSQL_DBNAME"),
+	// }
 	db := models.DBContext{
-		Host:     os.Getenv("MYSQL_HOST"),
-		Port:     os.Getenv("MYSQL_PORT"),
-		User:     os.Getenv("MYSQL_USER"),
-		Password: os.Getenv("MYSQL_PASSWORD"),
-		DBName:   os.Getenv("MYSQL_DBNAME"),
+		Host:     "localhost",
+		Port:     "3306",
+		User:     "root",
+		Password: "cakradara",
+		DBName:   "todolist",
 	}
 	conn, err := db.Connect()
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-	migration(os.Args[1], conn)
+	err = migration(os.Args[1], conn)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 }

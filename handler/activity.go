@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 	"todolists/models"
 	"todolists/utility"
@@ -117,7 +116,5 @@ func createActivity(c utility.ReqRes) {
 		c.WriteResponseJSON(http.StatusInternalServerError, err.Error(), utility.Payload{})
 		return
 	}
-
-	fmt.Println(activity.Map())
 	c.WriteResponseJSON(http.StatusOK, "Success", activity.Map())
 }

@@ -93,7 +93,7 @@ func (t *ToDo) Insert(db *sql.DB, ctx context.Context) error {
 		return err
 	}
 
-	result := `SELECT @id as "id", @is_active as "is_active", @priority as "priority", @created_at as "created_at", @updated_at as "updated_at";`
+	result := `SELECT @id_todo as "id", @is_active_todo as "is_active", @priority_todo as "priority", @created_at_todo as "created_at", @updated_at_todo as "updated_at";`
 	row := db.QueryRowContext(ctx, result)
 	err = row.Scan(&t.ID, &t.IsActive, &t.Priority, &t.Log.Create, &t.Log.Update)
 	if err != nil {
@@ -128,7 +128,7 @@ func (t *ToDo) Update(db *sql.DB, ctx context.Context, id string) error {
 	}
 
 	query := fmt.Sprintf("UPDATE todos SET updated_at=CURRENT_TIMESTAMP, %s WHERE id=%s;", data, id)
-	fmt.Println(query)
+
 	_, err := db.ExecContext(ctx, query)
 	if err != nil {
 		return err
@@ -171,7 +171,6 @@ func SelectTodo(db *sql.DB, context context.Context, id string) (ToDo, error) {
 
 func DeleteTodo(db *sql.DB, ctx context.Context, id string) error {
 	query := fmt.Sprintf("UPDATE todos SET deleted_at=CURRENT_TIMESTAMP WHERE id=%s", id)
-	fmt.Println(query)
 	_, err := db.ExecContext(ctx, query)
 	if err != nil {
 		return err
