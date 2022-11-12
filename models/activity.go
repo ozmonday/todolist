@@ -14,25 +14,40 @@ type Activity struct {
 	Title sql.NullString
 }
 
-func (a *Activity) Insert(db *sql.DB, context context.Context) {
+func (a *Activity) Insert(db *sql.DB, context context.Context) error {
 	var key string
 	var val string
 	for k, v := range a.Map() {
+		if v == nil {
+			continue
+		}
+		kind := fmt.Sprintf("%T", v)
 		if len(key) == 0 && len(val) == 0 {
 			key = k
-			val = fmt.Sprintf("'%s'", v)
+			if kind == "string" {
+				val = fmt.Sprintf("'%s'", v)
+			} else {
+				val = fmt.Sprintf("%v", v)
+			}
 			continue
 		}
 
 		key = fmt.Sprintf("%s, %s", key, k)
-		val = fmt.Sprintf("%s, '%s'", val, v)
+		if kind == "string" {
+			val = fmt.Sprintf("%s, '%v'", val, v)
+		} else {
+			val = fmt.Sprintf("%s, %v", val, v)
+		}
 	}
 	query := fmt.Sprintf("INSERT INTO activities (%s) VALUES (%s);", key, val)
-	db.ExecContext(context, query)
-
+	_, err := db.ExecContext(context, query)
+	if err != nil {
+		return err
+	}
 	result := `SELECT @id as "id", @created_at as "created_at", @updated_at as "updated_at";`
 	row := db.QueryRowContext(context, result)
 	row.Scan(&a.ID, &a.Log.Create, &a.Log.Update)
+	return nil
 }
 
 func SelectAllActivity(db *sql.DB, context context.Context) ([]Activity, error) {
@@ -53,6 +68,60 @@ func SelectAllActivity(db *sql.DB, context context.Context) ([]Activity, error) 
 	}
 
 	return result, nil
+}
+
+func SelectActivity(db *sql.DB, context context.Context, id string) (Activity, error) {
+
+	query := fmt.Sprintf("SELECT id, email, title, created_at, updated_at, deleted_at FROM activities WHERE id = %s;", id)
+	row := db.QueryRowContext(context, query)
+	r := Activity{}
+	err := row.Scan(&r.ID, &r.Email, &r.Title, &r.Log.Create, &r.Log.Update, &r.Log.Delete)
+	if err != nil {
+		return Activity{}, err
+	}
+	return r, nil
+}
+
+func (a *Activity) Update(db *sql.DB, ctx context.Context, id string) error {
+	var data string
+	for k, v := range a.Map() {
+		if v == nil {
+			continue
+		}
+
+		kind := fmt.Sprintf("%T", v)
+		if len(data) == 0 {
+			if kind == "string" {
+				data = fmt.Sprintf("%s='%v'", k, v)
+			} else {
+				data = fmt.Sprintf("%s=%v", k, v)
+			}
+			continue
+		}
+
+		if kind == "string" {
+			data = fmt.Sprintf("%s, %s='%v'", data, k, v)
+		} else {
+			data = fmt.Sprintf("%s, %s=%v", data, k, v)
+		}
+	}
+
+	query := fmt.Sprintf("UPDATE activities SET updated_at=CURRENT_TIMESTAMP, %s WHERE id=%s;", data, id)
+	_, err := db.ExecContext(ctx, query)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DeleteActivity(db *sql.DB, ctx context.Context, id string) error {
+	query := fmt.Sprintf("UPDATE activities SET deleted_at=CURRENT_TIMESTAMP WHERE id=%s", id)
+	_, err := db.ExecContext(ctx, query)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (a *Activity) Parse(data utility.Payload) {
@@ -88,8 +157,4 @@ func (a *Activity) Map() (result utility.Payload) {
 	}
 
 	return result
-}
-
-func CreateActivity() {
-
 }

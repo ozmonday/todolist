@@ -9,10 +9,11 @@ import (
 	"todolists/utility"
 
 	"github.com/NYTimes/gziphandler"
+	"github.com/gorilla/mux"
 )
 
 type Engine struct {
-	route  *http.ServeMux
+	route  *mux.Router
 	db     *sql.DB
 	config map[string]string
 }
@@ -25,7 +26,7 @@ func NewEngine(db models.DBContext) Engine {
 	}
 
 	return Engine{
-		route:  new(http.ServeMux),
+		route:  mux.NewRouter(),
 		db:     conn,
 		config: map[string]string{},
 	}

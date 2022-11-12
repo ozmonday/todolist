@@ -13,11 +13,10 @@ import (
 var engine app.Engine
 
 func initRoute() {
-	engine.HandleFunc("/", handler.Test)
 	engine.HandleFunc("/activity-groups", handler.ActivityGroup)
-	engine.HandleFunc("/activity-groups/{id}", handler.ActivityGroup)
-	engine.HandleFunc("/todo-items", handler.Test)
-	engine.HandleFunc("/todo-items/{id}", handler.Test)
+	engine.HandleFunc("/activity-groups/{id}", handler.ActivityGroupID)
+	engine.HandleFunc("/todo-items", handler.ToDo)
+	engine.HandleFunc("/todo-items/{id}", handler.ToDoID)
 }
 func main() {
 	runtime.GOMAXPROCS(3)

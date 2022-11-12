@@ -33,7 +33,7 @@ func (c *ReqRes) WriteResponseJSON(statusCode int, message string, data interfac
 	var res map[string]interface{} = make(map[string]interface{})
 	res["data"] = data
 	res["message"] = message
-	res["status"] = statusCode
+	res["status"] = http.StatusText(statusCode)
 
 	d, err := json.Marshal(res)
 	if err != nil {
