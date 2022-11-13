@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"todolists/middleware"
 	"todolists/models"
 	"todolists/utility"
 
@@ -33,7 +34,7 @@ func NewEngine(db models.DBContext) Engine {
 }
 
 func (a *Engine) Run(port string) error {
-
+	a.route.Use(middleware.CORSOrigin)
 	defer a.db.Close()
 	server := http.Server{
 		Handler: gziphandler.GzipHandler(a.route),
