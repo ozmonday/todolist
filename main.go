@@ -1,52 +1,61 @@
 package main
 
 import (
-	"net/http"
-
-	"github.com/gin-gonic/gin"
+	"fmt"
+	"log"
+	"os"
+	"runtime"
+	"todolists/app"
+	"todolists/handler"
+	"todolists/models"
+	"todolists/utility"
 )
 
-var db = make(map[string]string)
+var engine app.Engine
 
-func setupRouter() *gin.Engine {
-	r := gin.Default()
-	r.GET("/ping", func(ctx *gin.Context) {
-		ctx.String(http.StatusOK, "pong")
-	})
+func initRoute() {
+	engine.HandleFunc("/activity-groups", handler.ActivityGroup)
+	engine.HandleFunc("/activity-groups/{id}", handler.ActivityGroupID)
+	engine.HandleFunc("/todo-items", handler.ToDo)
+	engine.HandleFunc("/todo-items/{id}", handler.ToDoID)
+}
 
-	r.GET("/user/:name", func(c *gin.Context) {
-		user := c.Params.ByName("name")
-		value, ok := db[user]
-		if ok {
-			c.JSON(http.StatusOK, gin.H{"user": user, "value": value})
-		} else {
-			c.JSON(http.StatusOK, gin.H{"user": user, "status": "no value"})
-		}
-	})
-
-	authorized := r.Group("/", gin.BasicAuth(gin.Accounts{
-		"foo":  "bar", // user:foo password:bar
-		"manu": "123", // user:manu password:123
-	}))
-
-	authorized.POST("admin", func(c *gin.Context) {
-		user := c.MustGet(gin.AuthUserKey).(string)
-
-		// Parse JSON
-		var json struct {
-			Value string `json:"value" binding:"required"`
-		}
-
-		if c.Bind(&json) == nil {
-			db[user] = json.Value
-			c.JSON(http.StatusOK, gin.H{"status": "ok"})
-		}
-	})
-	return r
-
+func initMigrate(db models.DBContext) error {
+	conn, err := db.Connect()
+	if err != nil {
+		return err
+	}
+	utility.Migration("/usr/src/app/database/create_table_activities.sql", conn)
+	utility.Migration("/usr/src/app/database/create_table_todos.sql", conn)
+	utility.Migration("/usr/src/app/database/trigger_insert_activities.sql", conn)
+	utility.Migration("/usr/src/app/database/trigger_insert_todos.sql", conn)
+	defer conn.Close()
+	return nil
 }
 
 func main() {
-	r := setupRouter()
-	r.RunTLS(":3000", "./ssl/server.pem", "./ssl/server.key")
+	runtime.GOMAXPROCS(3)
+
+	db := models.DBContext{
+		Host:     os.Getenv("MYSQL_HOST"),
+		Port:     os.Getenv("MYSQL_PORT"),
+		User:     os.Getenv("MYSQL_USER"),
+		Password: os.Getenv("MYSQL_PASSWORD"),
+		DBName:   os.Getenv("MYSQL_DBNAME"),
+	}
+	fmt.Println(db)
+	for {
+		err := initMigrate(db)
+		if err != nil {
+			log.Println(err)
+		} else {
+			break
+		}
+	}
+	engine = app.NewEngine(db)
+	initRoute()
+	fmt.Println("Server runing on port:", os.Getenv("PORT"))
+	if err := engine.Run(os.Getenv("PORT")); err != nil {
+		log.Println(err)
+	}
 }
